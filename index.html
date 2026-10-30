@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>自然地理生成テスト v1.3 iPhone軽量化</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151c1c;color:#e9e5d9;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;touch-action:none}
+header{min-height:64px;padding:9px 14px;background:#202925;border-bottom:1px solid #405047;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+h1{font-size:16px;margin:0}.sub{font-size:10px;color:#aeb9ad;margin-top:3px}
+.controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}button{background:#39473d;border:1px solid #71806e;color:#f5f0df;border-radius:5px;padding:7px 10px;font-size:12px}button.primary{background:#8a7048;border-color:#b99a64}input{width:90px;background:#111918;border:1px solid #526057;color:#eee;padding:7px;border-radius:5px}
+main{height:calc(100dvh - 64px);display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:9px;padding:9px;min-height:0}
+#view{position:relative;min-width:0;min-height:0;border:1px solid #405047;border-radius:8px;overflow:hidden;background:#173b49;touch-action:none}
+#view canvas{display:block;width:100%;height:100%;touch-action:none}
+.hint{position:absolute;bottom:9px;left:10px;background:#101817bb;padding:6px 9px;border-radius:5px;font-size:10px;color:#e3e3d8;pointer-events:none}
+aside{background:#222b27;border:1px solid #405047;border-radius:8px;padding:12px;overflow:auto}
+h2{font-size:13px;margin:0 0 10px}.row{display:flex;justify-content:space-between;border-bottom:1px solid #38443e;padding:7px 0;font-size:11px}.row b{color:#e0c48d}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;font-size:10px;color:#b7c0b5}.key{display:flex;align-items:center;gap:5px}.sw{width:12px;height:12px;border-radius:3px}
+.note{font-size:10px;line-height:1.55;color:#aeb9ad;margin-top:13px}
+@media(max-width:700px){
+ header{height:auto;min-height:0;padding:7px 9px;display:block}
+ h1{font-size:14px}.sub{font-size:9px}
+ .controls{margin-top:6px;gap:4px}
+ button{padding:6px 7px;font-size:11px}
+ input{width:72px;padding:6px}
+ main{height:calc(100dvh - 104px);grid-template-columns:1fr;grid-template-rows:minmax(0,1fr);padding:5px;gap:0}
+ aside{display:none}
+ .hint{font-size:9px;bottom:6px;left:6px}
+}
+@media(max-width:390px){header{padding:5px 7px}.controls{gap:3px}button{font-size:10px;padding:5px 6px}.sub{display:none}main{height:calc(100dvh - 76px)}}
+
+@media (orientation:landscape) and (max-height:600px){
+ header{height:54px;min-height:54px;padding:4px 8px;flex-wrap:nowrap;gap:8px}
+ h1{font-size:13px;white-space:nowrap}.sub{font-size:9px;white-space:nowrap}
+ .controls{flex-wrap:nowrap;gap:4px}
+ button{padding:5px 7px;font-size:10px;white-space:nowrap}
+ input{width:62px;padding:5px;font-size:11px}
+ main{height:calc(100dvh - 54px);grid-template-columns:minmax(0,1fr) 170px;grid-template-rows:minmax(0,1fr);padding:5px;gap:6px}
+ aside{display:block;padding:7px;overflow:auto}
+ aside h2{display:block;font-size:11px;margin:0 0 5px}
+ .row{padding:4px 0;font-size:9px}
+ aside h2:nth-of-type(2){margin-top:7px}
+ .legend{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:8px;margin-top:5px}
+ .key{gap:3px}.sw{width:9px;height:9px}
+ .note{display:none}
+ .hint{font-size:8px;bottom:4px;left:5px;padding:4px 6px}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:700px){
+ header{height:auto;min-height:50px;padding:4px 6px;display:flex}
+ h1{font-size:11px}.sub{display:none}
+ .controls{margin-top:0;gap:3px}
+ button{font-size:9px;padding:4px 5px}
+ input{width:52px}
+ main{height:calc(100dvh - 50px);grid-template-columns:minmax(0,1fr) 125px;padding:3px;gap:4px}
+ aside{display:block;padding:5px}
+ .row{font-size:8px;padding:3px 0}
+ .legend{font-size:7px;gap:3px}
+}
+</style>
+</head>
+<body>
+<header><div><h1>自然地理生成テスト v1.3 iPhone軽量化</h1><div class="sub">3D地形 / 1000 × 1000ブロック / 地理のみ</div></div>
+<div class="controls"><button class="primary" id="regen">大陸を再生成</button><button id="back">前の世界</button><label style="font-size:11px;color:#bac2b7">Seed <input id="seed" value="260104"></label><button id="apply">Seed指定</button><button id="reset">視点リセット</button></div></header>
+<main><section id="view"><div class="hint">左画面：地図移動　／　右画面：視点回転　／　2本指：ズーム</div></section>
+<aside><h2>生成された世界</h2>
+<div class="row"><span>シード</span><b id="sSeed">—</b></div><div class="row"><span>大陸・大きな陸塊</span><b id="continents">—</b></div><div class="row"><span>群島</span><b>2か所</b></div><div class="row"><span>山脈</span><b id="ranges">—</b></div><div class="row"><span>河川</span><b id="rivers">—</b></div><div class="row"><span>湖</span><b id="lakes">—</b></div><div class="row"><span>陸地率</span><b id="land">—</b></div>
+<h2 style="margin-top:15px">地形凡例</h2><div class="legend" id="legend"></div><div class="note">3D表示はThree.jsを使用。地形生成は試作段階で、河川・湖・海峡などの地理的整合性は今後さらに調整します。</div></aside></main>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(()=>{
+const W=1000,H=1000,view=document.getElementById('view');
+const C={ocean:0x183b4a,shallow:0x285968,beach:0xb9a77b,plains:0x78885a,grass:0x71834f,forest:0x3b5d43,dense:0x294638,hills:0x907b55,plateau:0x866d4c,mountain:0x686b63,peak:0xaaa99d,wetland:0x587e75,desert:0xc5a56d,tundra:0xa5b3ad,lake:0x397b91,river:0x62a9bd};
+const names={ocean:'外洋',shallow:'浅瀬',beach:'砂浜',plains:'平原',grass:'草原',forest:'森林',dense:'密林',hills:'丘陵',plateau:'高原',mountain:'山岳',peak:'高山',wetland:'湿地',desert:'砂漠・荒野',tundra:'ツンドラ',lake:'湖',river:'河川'};
+document.getElementById('legend').innerHTML=Object.keys(names).map(k=>`<div class="key"><i class="sw" style="background:#${C[k].toString(16).padStart(6,'0')}"></i>${names[k]}</div>`).join('');
+let scene,camera,renderer,controls,terrain,water,world,history=[];
+function rng(seed){let a=seed>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+function hash(x,y,s){let n=Math.imul(x,374761393)+Math.imul(y,668265263)+s*1442695041;n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967295}
+function sm(t){return t*t*(3-2*t)}
+function noise(x,y,s,sc){let fx=x/sc,fy=y/sc,x0=Math.floor(fx),y0=Math.floor(fy),tx=sm(fx-x0),ty=sm(fy-y0),a=hash(x0,y0,s),b=hash(x0+1,y0,s),c=hash(x0,y0+1,s),d=hash(x0+1,y0+1,s);return(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty}
+function generate(seed){
+ let r=rng(seed),g=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>({land:false,arch:false,z:-1,k:'ocean',lake:false,river:false})));
+ // Generate 2-5 broad, irregular landmasses. Keep a natural irregular shape,
+ // then choose the elevation-field threshold so the main landmass coverage is ~59.8%.
+ const massCount=2+Math.floor(r()*4),masses=[];
+ for(let i=0;i<massCount;i++){
+   masses.push({cx:110+r()*780,cy:110+r()*780,rx:116+r()*190,ry:96+r()*184,rot:r()*Math.PI});
+ }
+ const landField=new Float32Array(W*H);let lo=-2,hi=1.5;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   let field=-10;
+   for(const m of masses){
+     const dx=x-m.cx,dy=y-m.cy,ca=Math.cos(m.rot),sa=Math.sin(m.rot);
+     const u=(dx*ca-dy*sa)/m.rx,v=(dx*sa+dy*ca)/m.ry;
+     const radius=Math.sqrt(u*u+v*v);
+     field=Math.max(field,1-radius);
+   }
+   const warp=(noise(x,y,seed+11,94)-.5)*.48+(noise(x,y,seed+12,38)-.5)*.22+(noise(x,y,seed+13,16)-.5)*.10;
+   const value=field+warp;landField[y*W+x]=value;
+   if(value<lo)lo=value;if(value>hi)hi=value;
+ }
+ const targetLandRatio=.598;
+ for(let iter=0;iter<22;iter++){
+   const mid=(lo+hi)/2;let count=0;
+   for(let i=0;i<landField.length;i++)if(landField[i]>=mid)count++;
+   if(count/landField.length>targetLandRatio)lo=mid;else hi=mid;
+ }
+ const landThreshold=(lo+hi)/2;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(landField[y*W+x]>=landThreshold)g[y][x].land=true;
+ // Exactly two island clusters, placed only in ocean cells.
+ for(let a=0;a<2;a++){let cx=24+r()*(W-48),cy=24+r()*(H-48),count=10+Math.floor(r()*15);for(let i=0;i<count;i++){let ix=Math.round(cx+(r()-.5)*36),iy=Math.round(cy+(r()-.5)*30);for(let y=Math.max(0,iy-6);y<=Math.min(H-1,iy+6);y++)for(let x=Math.max(0,ix-6);x<=Math.min(W-1,ix+6);x++){let d=Math.hypot(x-ix,y-iy);if(d<1.4+r()*4&&!g[y][x].land){g[y][x].land=true;g[y][x].arch=true}}}}
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(g[y][x].land)g[y][x].z=Math.max(0,(noise(x,y,seed+400,40)-.5)*1.7+(noise(x,y,seed+401,16)-.5)*.7);
+ let rn=1+Math.floor(r()*3),ranges=[];
+ for(let q=0;q<rn;q++){let cx=30+r()*(W-60),cy=30+r()*(H-60),a=r()*Math.PI,len=44+r()*104,amp=3.8+r()*5,ph=r()*6; ranges.push(1);for(let t=-len/2;t<len/2;t+=1){let bend=Math.sin(t*.035+ph)*6,px=cx+Math.cos(a)*t-Math.sin(a)*bend,py=cy+Math.sin(a)*t+Math.cos(a)*bend;for(let y=Math.max(0,Math.floor(py-12));y<Math.min(H,Math.ceil(py+12));y++)for(let x=Math.max(0,Math.floor(px-12));x<Math.min(W,Math.ceil(px+12));x++){let c=g[y][x];if(!c.land||c.arch)continue;let d=Math.hypot(x-px,y-py);c.z=Math.max(c.z,amp*Math.exp(-d*d/120)+0.35*noise(x,y,seed+510,14))}}}
+ // A small number of lakes; 0, 1 or 2.
+ let lakes=[],candidates=[];for(let y=5;y<H-5;y++)for(let x=5;x<W-5;x++)if(g[y][x].land&&!g[y][x].arch&&g[y][x].z<.7)candidates.push([x,y]);
+ let ln=Math.floor(r()*3);for(let i=0;i<ln&&candidates.length;i++){let idx=Math.floor(r()*candidates.length),[cx,cy]=candidates.splice(idx,1)[0],rx=4+r()*5,ry=4+r()*5;lakes.push(1);for(let y=Math.max(0,cy-10);y<=Math.min(H-1,cy+10);y++)for(let x=Math.max(0,cx-10);x<=Math.min(W-1,cx+10);x++)if(g[y][x].land&&!g[y][x].arch&&((x-cx)/rx)**2+((y-cy)/ry)**2<1)g[y][x].lake=true}
+ // Terrain and vegetation classes.
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){let c=g[y][x];if(!c.land)continue;if(c.lake){c.k='lake';continue}let f=noise(x,y,seed+901,24),v=noise(x,y,seed+777,32);c.k=c.z>8?'peak':c.z>4.5?'mountain':c.z>2.5?'plateau':c.z>1.2?'hills':'plains';if(c.k==='plains')c.k=v<.1?'wetland':v>.9?'desert':f>.62?'forest':'grass';else if(c.k==='hills'||c.k==='plateau')c.k=f>.65?'forest':'grass';else if(c.k==='mountain'||c.k==='peak')c.k='tundra';if(c.k==='forest'&&f>.84)c.k='dense'}
+ // Generate visible rivers from uplands to coast/lake. Route downhill with a fallback search to avoid dead ends.
+ let riverN=0,riverPaths=[];
+ const coastTargets=[];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(!g[y][x].land)coastTargets.push([x,y]);
+ function routeToWater(sx,sy){
+   let x=sx,y=sy,path=[[x,y]],seen=new Set([y*W+x]);
+   for(let step=0;step<1300;step++){
+     let c=g[y][x];if(!c.land||c.lake)break;
+     let best=null,bestScore=Infinity;
+     for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+       if(!dx&&!dy)continue;let nx=x+dx,ny=y+dy;
+       if(nx<0||nx>=W||ny<0||ny>=H)continue;
+       let nc=g[ny][nx],key=ny*W+nx;if(seen.has(key))continue;
+       let score=nc.land?(nc.z + (Math.hypot(dx,dy)-1)*.18 + (nc.z>=c.z?.8:0)): -5;
+       if(nc.lake)score=-4;
+       if(score<bestScore){bestScore=score;best=[nx,ny]}
+     }
+     if(!best)break;
+     [x,y]=best;path.push([x,y]);seen.add(y*W+x);
+     if(!g[y][x].land||g[y][x].lake)break;
+   }
+   if(path.length>8&&( !g[y][x].land || g[y][x].lake )){
+     for(const [px,py] of path)if(g[py][px].land&&!g[py][px].lake)g[py][px].river=true;
+     return path;
+   }
+   return null;
+ }
+ const sources=[];
+ for(let y=24;y<H-24;y+=8)for(let x=24;x<W-24;x+=8){
+   const c=g[y][x];if(c.land&&!c.arch&&!c.lake&&c.z>2.0)sources.push([x,y,c.z+r()*.5]);
+ }
+ sources.sort((a,b)=>b[2]-a[2]);
+ for(const [sx,sy] of sources){
+   if(riverN>=12)break;
+   if(g[sy][sx].river)continue;
+   const path=routeToWater(sx,sy);
+   if(path){riverPaths.push(path);riverN++}
+ }
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){let c=g[y][x];if(c.river)c.k='river';if(!c.land){let shore=[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>g[y+dy]?.[x+dx]?.land);if(shore)c.k='shallow'}}
+ return {seed,g,massCount,ranges:rn,lakes:lakes.length,riverN,riverPaths};
+}
+function init3D(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x173b49);scene.fog=new THREE.Fog(0x173b49,2200,5200);
+ camera=new THREE.PerspectiveCamera(42,1,.1,7000);camera.position.set(1050,1270,1370);
+ renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,1));renderer.outputEncoding=THREE.sRGBEncoding;view.insertBefore(renderer.domElement,view.firstChild);
+ controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enabled=false;controls.target.set(0,0,0);
+ // タッチ専用操作：左半分=地図移動、右半分=視点回転、2本指=ズーム
+ const canvas=renderer.domElement;canvas.style.touchAction='none';
+ let touchMode=null,lastTouch=null,lastPinch=null;
+ const touchPoint=t=>({x:t.clientX,y:t.clientY});
+ const pinchDistance=ts=>Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
+ canvas.addEventListener('contextmenu',e=>e.preventDefault());
+ canvas.addEventListener('touchstart',e=>{
+   e.preventDefault();e.stopImmediatePropagation();
+   if(e.touches.length>=2){touchMode='pinch';lastPinch=pinchDistance(e.touches);lastTouch=null;}
+   else if(e.touches.length===1){const t=e.touches[0],r=canvas.getBoundingClientRect();touchMode=(t.clientX-r.left)<r.width/2?'pan':'rotate';lastTouch=touchPoint(t);lastPinch=null;}
+ },{capture:true,passive:false});
+ canvas.addEventListener('touchmove',e=>{
+   e.preventDefault();e.stopImmediatePropagation();
+   if(e.touches.length>=2){
+     const d=pinchDistance(e.touches);
+     if(lastPinch){const offset=camera.position.clone().sub(controls.target);const len=THREE.MathUtils.clamp(offset.length()*lastPinch/Math.max(d,1),45,4000);offset.setLength(len);camera.position.copy(controls.target).add(offset);camera.lookAt(controls.target);}
+     lastPinch=d;touchMode='pinch';return;
+   }
+   if(e.touches.length===1&&touchMode!=='pinch'){
+     const t=e.touches[0],now=touchPoint(t);if(!lastTouch){lastTouch=now;return;}
+     const dx=now.x-lastTouch.x,dy=now.y-lastTouch.y;
+     if(touchMode==='pan'){
+       const dist=camera.position.distanceTo(controls.target),scale=dist*0.0018;
+       const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0);right.y=0;right.normalize();
+       const forward=new THREE.Vector3();camera.getWorldDirection(forward);forward.y=0;forward.normalize();
+       const shift=right.multiplyScalar(-dx*scale).add(forward.multiplyScalar(dy*scale));
+       camera.position.add(shift);controls.target.add(shift);
+     }else if(touchMode==='rotate'){
+       const offset=camera.position.clone().sub(controls.target),spherical=new THREE.Spherical().setFromVector3(offset);
+       spherical.theta-=dx*0.006;spherical.phi=Math.max(0.12,Math.min(Math.PI*0.48,spherical.phi-dy*0.006));
+       offset.setFromSpherical(spherical);camera.position.copy(controls.target).add(offset);camera.lookAt(controls.target);
+     }
+     lastTouch=now;
+   }
+ },{capture:true,passive:false});
+ const endTouch=e=>{
+   e.preventDefault();e.stopImmediatePropagation();
+   if(e.touches.length>=2){touchMode='pinch';lastPinch=pinchDistance(e.touches);lastTouch=null;}
+   else if(e.touches.length===1){const t=e.touches[0],r=canvas.getBoundingClientRect();touchMode=(t.clientX-r.left)<r.width/2?'pan':'rotate';lastTouch=touchPoint(t);lastPinch=null;}
+   else{touchMode=null;lastTouch=null;lastPinch=null;}
+ };
+ canvas.addEventListener('touchend',endTouch,{capture:true,passive:false});
+ canvas.addEventListener('touchcancel',endTouch,{capture:true,passive:false});
+ scene.add(new THREE.HemisphereLight(0xd5ded5,0x39463f,0.72));let sun=new THREE.DirectionalLight(0xf0eadb,0.72);sun.position.set(-100,180,80);scene.add(sun);
+ const ocean=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),new THREE.MeshStandardMaterial({color:0x1c5265,roughness:.82}));ocean.rotation.x=-Math.PI/2;ocean.position.y=-1.3;scene.add(ocean);
+ const grid=new THREE.GridHelper(1200,120,0x55716b,0x35534f);grid.position.y=-1.28;grid.material.opacity=.16;grid.material.transparent=true;scene.add(grid);
+ function resize(){let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);if(!window._cameraFramed){frameWorld();window._cameraFramed=true}}
+ function frameWorld(){const vFov=THREE.MathUtils.degToRad(camera.fov),hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect),fit=300/Math.tan(Math.min(vFov,hFov)/2)*1.12;const dir=new THREE.Vector3(.62,.78,.62).normalize();camera.position.copy(controls.target).add(dir.multiplyScalar(fit));camera.lookAt(controls.target)}
+ new ResizeObserver(resize).observe(view);resize();
+ function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();
+}
+function buildMesh(){
+ if(terrain){scene.remove(terrain);terrain.geometry.dispose();terrain.material.dispose()}
+ const R=360;const geo=new THREE.PlaneGeometry(500,500,R-1,R-1);geo.rotateX(-Math.PI/2);
+ const pos=geo.attributes.position,cols=[];
+ for(let i=0;i<pos.count;i++){let x=Math.round((pos.getX(i)+250)/500*(W-1)),y=Math.round((pos.getZ(i)+250)/500*(H-1));x=Math.max(0,Math.min(W-1,x));y=Math.max(0,Math.min(H-1,y));let c=world.g[y][x];let h=c.land?c.z*.85:-1.55;pos.setY(i,h);let col=new THREE.Color(c.land?C[c.k]||C.plains:C.ocean);cols.push(col.r,col.g,col.b)}
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));geo.computeVertexNormals();
+ terrain=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:false}));scene.add(terrain);
+ // 河川を地形表面に沿う細い水面ポリゴンとして描画（管状メッシュによる浮き上がりを防止）
+ if(window.riverGroup){scene.remove(window.riverGroup);window.riverGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
+ window.riverGroup=new THREE.Group();
+ const riverMat=new THREE.MeshStandardMaterial({color:0x4aa6c4,roughness:.38,metalness:.01,side:THREE.DoubleSide});
+ const surfaceHeight=(gx,gy)=>{
+   gx=Math.max(0,Math.min(W-1,gx));gy=Math.max(0,Math.min(H-1,gy));
+   const x0=Math.floor(gx),y0=Math.floor(gy),x1=Math.min(W-1,x0+1),y1=Math.min(H-1,y0+1);
+   const tx=gx-x0,ty=gy-y0;
+   const h=(x,y)=>world.g[y][x].land?world.g[y][x].z*.85:-1.55;
+   return (h(x0,y0)*(1-tx)+h(x1,y0)*tx)*(1-ty)+(h(x0,y1)*(1-tx)+h(x1,y1)*tx)*ty+.025;
+ };
+ for(const path of (world.riverPaths||[])){
+   if(path.length<2)continue;
+   const positions=[],indices=[],halfWidth=.19;
+   for(let i=0;i<path.length;i++){
+     const [gx,gy]=path[i],prev=path[Math.max(0,i-1)],next=path[Math.min(path.length-1,i+1)];
+     let dx=next[0]-prev[0],dy=next[1]-prev[1],len=Math.hypot(dx,dy)||1;
+     const nx=-dy/len,ny=dx/len;
+     for(const side of [-1,1]){
+       const px=gx+nx*halfWidth*side,py=gy+ny*halfWidth*side;
+       positions.push(px*.5-250,surfaceHeight(px,py),py*.5-250);
+     }
+     if(i>0){const a=(i-1)*2,b=a+1,c=i*2,d=c+1;indices.push(a,c,b,b,c,d)}
+   }
+   const rg=new THREE.BufferGeometry();
+   rg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   rg.setIndex(indices);rg.computeVertexNormals();
+   window.riverGroup.add(new THREE.Mesh(rg,riverMat));
+ }
+ scene.add(window.riverGroup);
+}
+function stats(){
+ let land=0;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(world.g[y][x].land)land++;
+ document.getElementById('sSeed').textContent=world.seed;
+ document.getElementById('continents').textContent=world.massCount??'—';
+ document.getElementById('ranges').textContent=world.ranges;
+ document.getElementById('rivers').textContent=world.riverN;
+ document.getElementById('lakes').textContent=world.lakes;
+ document.getElementById('land').textContent=(land/(W*H)*100).toFixed(1)+'%';
+}
+function setWorld(seed){if(world){history.push(world);if(history.length>1)history.shift()}world=generate(seed>>>0);buildMesh();stats();document.getElementById('seed').value=seed>>>0}
+document.getElementById('regen').onclick=()=>setWorld(Math.floor(Math.random()*4294967295));document.getElementById('apply').onclick=()=>setWorld(parseInt(document.getElementById('seed').value)||1);document.getElementById('back').onclick=()=>{if(history.length){world=history.pop();buildMesh();stats();document.getElementById('seed').value=world.seed}};document.getElementById('reset').onclick=()=>{controls.target.set(0,0,0);frameWorld();controls.update()};
+init3D();setWorld(260104);
+})();
+</script></body></html>
